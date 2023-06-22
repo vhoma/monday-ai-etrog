@@ -1,197 +1,106 @@
-import dynamic from "next/dynamic";
-import React, { useContext, useMemo } from "react";
-// import { ChatMessage, ChatRole } from "@mondaydotcomorg/react-hooks";
-import { useCallback, useEffect, useState } from "react";
-import mondaySdk from "monday-sdk-js";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-import { showErrorMessage } from "@/helpers/monday-actions";
-
-import { useAiApi } from "@/hooks/useAiApi";
-import useBoardGroups, {mapBoardGroupsToDropdownOptions} from "@/hooks/useBoardGroups";
-import classes from "./prompt-layout.module.scss";
-import TextInputWithSend from "../../components/text-input-with-send/text-input-with-send";
-import SelectGroup from "@/components/select-group";
-import { useSuccessMessage } from "@/hooks/useSuccessMessage";
-
-import { Modes } from "@/types/layout-modes";
-import {
-  MondayApiResponse,
-  MondayApiResponseSuccess,
-  MondayApiResponseFailure,
-  executeMondayApiCall,
-} from "@/helpers/monday-api-helpers";
-import { AppContext } from "@/components/context-provider/app-context-provider";
-import SelectColumn from "../../components/select-column";
-import useBoardColumns, {mapBoardColumnsToDropdownOptions} from "@/hooks/useBoardColumns";
-import { PromptsApiPayloadType } from "@/hooks/useAiApi";
-
-const monday = mondaySdk();
-
-type Props = {
-  initialInput?: string;
+const init = async () => {
+  try {
+    console.log("init");
+    const response = await axios.get("http://52.66.238.200:8080/init");
+  } catch (error) {
+    console.error(error);
+  }
 };
+init();
 
-type Dropdown = {
-  options: any;
-  placeholder: string;
-};
+const wherebyEmbed = document.createElement("whereby-embed");
 
-type DropdownSelection = {
-  id: string;
-  value: string;
-};
-
-type LayoutState = {
-  inputs: Record<string, any>;
-  setInputs: (inputs: Record<string, any>) => void;
-  mode?: string;
-  success?: boolean;
-  action: (sessionToken: string) => {
-    error: any;
-    loading: boolean;
-    data: Record<string, any>[];
-    fetchData: (body: Record<string, any>) => Record<string, any>[];
+const WhisperPage = () => {
+  const handleLeave = () => {
+    const interval = setInterval(statusCheck, 1000); // Call statusCheck every 1 second
   };
-};
 
-// TODO: rename this component
-const BasePromptLayout = ({ initialInput = "" }: Props): JSX.Element => {
-  // TODO: use reducer for this state
-  const context = useContext(AppContext);
-  const boardColumns = useBoardColumns(context);
+  const [status, setStatus] = useState("");
 
-  const columnsForDropdown = useMemo(() => {
-    return mapBoardColumnsToDropdownOptions(boardColumns) ?? [];
-  }, [boardColumns]);
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.srv.whereby.com/embed/v1.js";
+    script.type = "module";
 
-  const boardGroups = useBoardGroups(context);
-  const boardGroupsForDropdown = useMemo(() => {
-    return mapBoardGroupsToDropdownOptions(boardGroups) ?? [];
-  }, [boardGroups]);
+    const style = document.createElement("style");
+    style.innerText = "whereby-embed { height: 200px; }";
 
-  const [mode, setMode] = useState<Modes>(Modes.request);
-
-  const [success, setSuccess] = useState<boolean>(false);
-  useSuccessMessage(success);
-
-  const [selectedGroup, setSelectedGroup] = useState<string>();
-  const [selectedColumn, setSelectedColumn] = useState<string>();
-
-  const sessionToken = context?.sessionToken ?? "";
-  const apiRoute = "/openai/prompts";
-
-  const { loading, data, error, fetchData } = useAiApi(apiRoute, sessionToken);
-
-  function handleColumnSelect(e: DropdownSelection) {
-    setSelectedColumn(e?.value);
-  }
-
-  function handleGroupSelect(e: DropdownSelection) {
-    setSelectedGroup(e?.value);
-  }
-
-  function getItemsFromGroup(
-    groupId: string | string[],
-    boardId: number | number[]
-  ) {
-    return executeMondayApiCall(
-      `query($boardId:[Int!], $groupId:[String!]) {boards(ids:$boardId){groups (ids:$groupId) { items { id } } } }`,
-      {
-        variables: { groupId, boardId },
-      }
+    wherebyEmbed.setAttribute("minimal", "");
+    wherebyEmbed.setAttribute(
+      "room",
+      "https://etrog.whereby.com/e55a0d5c-2164-4a23-947f-f8299d2b3336?roomKey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZWV0aW5nSWQiOiI3NTUxOTkxOSIsInJvb21SZWZlcmVuY2UiOnsicm9vbU5hbWUiOiIvZTU1YTBkNWMtMjE2NC00YTIzLTk0N2YtZjgyOTlkMmIzMzM2Iiwib3JnYW5pemF0aW9uSWQiOiIxODQ1MzYifSwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5zcnYud2hlcmVieS5jb20iLCJpYXQiOjE2ODc0MzAyMDYsInJvb21LZXlUeXBlIjoibWVldGluZ0hvc3QifQ.F1WbympD2m2zxEJM8-XIfywxLPCnsa2hqAXj3H0hzS4?timer=on&leaveButton=on"
     );
-  }
 
-  const handleSend = useCallback(
-    async (input: string) => {
-      if (!selectedGroup) {
-        showErrorMessage("Select a group first", 3000);
-        return { error: true };
+    const container = document.createElement("div");
+    container.appendChild(script);
+    container.appendChild(style);
+    container.appendChild(wherebyEmbed);
+
+    const embedContainer = document.getElementById("whereby-embed-container");
+    if (embedContainer) {
+      embedContainer.appendChild(container);
+    }
+    wherebyEmbed.addEventListener("leave", handleLeave);
+
+    return () => {
+      if (embedContainer) {
+        embedContainer.innerHTML = "";
       }
-      if (!selectedColumn) {
-        showErrorMessage("Select a column first", 3000);
-        return { error: true };
-      }
+      clearInterval(interval);
+      wherebyEmbed.removeEventListener("leave", handleLeave);
+    };
+  }, []);
 
-      setMode(Modes.response);
-      const board = context?.iframeContext?.boardId ?? [];
-
-      // get board items, then send items to backend, then update board with response
-
-      const groupItems: MondayApiResponse = await getItemsFromGroup(
-        selectedGroup,
-        board
+  const statusCheck = async () => {
+    try {
+      console.log("status");
+      const response = await axios.get(
+        "http://52.66.238.200:8080/get_action_items"
       );
-
-      if (!groupItems.is_success) {
-        showErrorMessage("Could not retrieve items from board.", 3000);
-        return { error: true };
+      if (response.data.status === "Processing DONE!!") {
+        console.log(response.data.action_items);
       }
-
-      const aiApiPayload: PromptsApiPayloadType = {
-        items: groupItems.data.boards[0].groups[0].items,
-        prompts: input,
-        n: groupItems.data.boards[0].groups[0].items.length,
-      };
-
-      const aiApiResponse = await fetchData(aiApiPayload);
-
-      if (aiApiResponse.length === 0 || !aiApiResponse.length) {
-        showErrorMessage("Selected group has no items.", 3000);
-        return [];
-      } else {
-        let itemUpdates = aiApiResponse.map(
-          async (result: Record<string, any>) => {
-            return await executeMondayApiCall(
-              `mutation ($column:String!,$boardId:Int!, $itemId:Int!, $value:String!) {change_simple_column_value (column_id:$column, board_id:$boardId, item_id:$itemId, value:$value) {id }}`,
-              {
-                variables: {
-                  column: selectedColumn,
-                  boardId: board,
-                  itemId: parseInt(result.item.id),
-                  value: result.result,
-                },
-              }
-            );
-          }
-        );
-        let success = await Promise.all(itemUpdates);
-        if (success) {
-          console.log("promises:", success);
-          setMode(Modes.request);
-          setSuccess(true);
-          setTimeout(() => setSuccess(false), 5000);
-        }
-      }
-    },
-    [fetchData, context, selectedColumn, selectedGroup]
-  );
+      setStatus(response.data.status);
+    } catch (error) {
+      console.error(error);
+      setStatus("Error retrieving status");
+    }
+  };
 
   return (
-    <div className={classes.main}>
-      <div className={classes.dropdownContainer}>
-        <SelectColumn
-          className={classes.columnsDropdown}
-          columns={columnsForDropdown}
-          onChange={handleColumnSelect}
-        />
-        <SelectGroup
-          className={classes.groupsDropdown}
-          groups={boardGroupsForDropdown}
-          onChange={handleGroupSelect}
-        />
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#006754",
+      }}
+    >
+      <div
+        id="whereby-embed-container"
+        style={{
+          display: "block",
+        }}
+      ></div>
+      <div
+        id="main"
+        style={{
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#006754",
+          width: "100%",
+          height: "100%",
+        }}
+      >
+        <p style={{ color: "wheat", display: "block" }}>
+          This is status:{status}
+        </p>
+        <script src="https://cdn.srv.whereby.com/embed/v1.js" type="module" />
       </div>
-      <TextInputWithSend
-        mode={mode}
-        setMode={setMode}
-        error={error}
-        initialInputValue={initialInput}
-        loading={loading || mode == Modes.response}
-        success={success}
-        onSend={handleSend}
-      />
     </div>
   );
 };
 
-export default BasePromptLayout;
+export default WhisperPage;
