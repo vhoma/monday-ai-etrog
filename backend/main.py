@@ -20,6 +20,13 @@ app.add_middleware(
 )
 
 action_items = None
+STATES = [
+    "Waiting the call recording to arrive in storage...",
+    "Processing audio...",
+    "Processing transcription text...",
+    "Processing DONE!!"
+]
+STATE_ID = 0
 
 
 @app.post("/recording_ready")
@@ -35,10 +42,9 @@ async def process_recording(file: UploadFile = UploadFile(...)):
 @app.get("/get_action_items")
 def get_action_items():
     global action_items
-    if action_items:
-        return {"processing_done": True, "action_items": action_items}
-    else:
-        return {"processing_done": False, "action_items": action_items}
+    global STATE_ID
+    global STATES
+    return {"status": STATES[STATE_ID], "action_items": action_items}
 
 
 def process_data(file_content):
