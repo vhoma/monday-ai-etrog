@@ -26,7 +26,7 @@ STATES = [
     "Processing transcription text...",
     "Processing DONE!!"
 ]
-STATE_ID = 0
+STATE_ID = 1
 
 
 @app.post("/recording_ready")
