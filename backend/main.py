@@ -1,4 +1,6 @@
 from fastapi import FastAPI, UploadFile
+import uvicorn
+import sys
 
 app = FastAPI()
 
@@ -15,5 +17,8 @@ def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "q": q}
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=80)
+    if len(sys.argv) > 1:
+        port = int(sys.argv[1])
+    else:
+        port = 8000
+    uvicorn.run(app, host="0.0.0.0", port=port)
