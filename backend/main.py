@@ -59,7 +59,7 @@ def transcribe_audio(file_content):
 
 
 def parse_action_items(transcript):
-
+    pass
 
 
 if __name__ == "__main__":
