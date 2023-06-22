@@ -1,11 +1,24 @@
 from fastapi import FastAPI, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import dotenv_values
 import uvicorn
 import sys
 import openai
 import requests
 
+
 app = FastAPI()
+# CORS settings
+origins = ['*']
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 action_items = None
 
 
@@ -43,6 +56,10 @@ def transcribe_audio(file_content):
         transcript = openai.Audio.translate("whisper-1", audio_file)
 
     return transcript
+
+
+def parse_action_items(transcript):
+
 
 
 if __name__ == "__main__":
